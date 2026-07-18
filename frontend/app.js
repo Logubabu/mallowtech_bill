@@ -1,5 +1,4 @@
 const API_BASE = "http://localhost:8000/api";
-
 // Page 1 logic
 const addBtn = document.getElementById('addBtn');
 if (addBtn) {
@@ -15,8 +14,41 @@ if (addBtn) {
     });
 }
 
+function syncCashFromDenominations() {
+    const cashInput = document.getElementById('cashPaid');
+    if (!cashInput) {
+        return;
+    }
+
+    const denominations = [
+        ['500', 'den-500'],
+        ['50', 'den-50'],
+        ['20', 'den-20'],
+        ['10', 'den-10'],
+        ['5', 'den-5'],
+        ['2', 'den-2'],
+        ['1', 'den-1'],
+    ];
+
+    const total = denominations.reduce((sum, [label, id]) => {
+        const element = document.getElementById(id);
+        const count = parseInt(element?.value || 0, 10);
+        return sum + (count * parseInt(label, 10));
+    }, 0);
+
+    cashInput.value = total;
+}
+
 const billForm = document.getElementById('billForm');
 if (billForm) {
+    ['den-500', 'den-50', 'den-20', 'den-10', 'den-5', 'den-2', 'den-1'].forEach((id) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('input', syncCashFromDenominations);
+            element.addEventListener('change', syncCashFromDenominations);
+        }
+    });
+
     billForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         

@@ -75,6 +75,24 @@ def read_products(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
     products = crud.get_products(db, skip=skip, limit=limit)
     return products
 
+@app.post("/api/products", response_model=schemas.Product)
+def create_product(product_in: schemas.ProductCreate, db: Session = Depends(get_db)):
+    existing = crud.get_product_by_product_id(db, product_in.product_id)
+    if existing:
+        raise HTTPException(status_code=400, detail="Product ID already exists")
+
+    product = models.Product(
+        product_id=product_in.product_id,
+        name=product_in.name,
+        available_stocks=product_in.available_stocks,
+        price=product_in.price,
+        tax_percentage=product_in.tax_percentage,
+    )
+    db.add(product)
+    db.commit()
+    db.refresh(product)
+    return product
+
 @app.post("/api/bills", response_model=schemas.BillResponse)
 def create_bill(bill_in: schemas.BillCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     if not bill_in.items:
@@ -115,8 +133,6 @@ def read_bill(bill_id: int, db: Session = Depends(get_db)):
     if db_bill is None:
         raise HTTPException(status_code=404, detail="Bill not found")
         
-    # Recalculate or mock denoms since we don't store the exact returned denoms in DB
-    # For a real system we might store it.
     balance_denoms = utils.calculate_balance_denominations(db_bill.balance_payable, {})
     return _build_bill_payload(db, db_bill, balance_denoms)
 

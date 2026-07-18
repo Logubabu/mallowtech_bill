@@ -4,7 +4,9 @@ A simple billing application built with FastAPI, PostgreSQL, and vanilla HTML/CS
 
 ## Features
 - Product listing from the database
+- Product creation through the API
 - Bill creation with tax and balance calculation
+- Automatic cash amount calculation from denomination input
 - Balance denomination breakdown for change
 - Bill history lookup by customer email
 - Docker-based setup for database, backend, and frontend
@@ -66,10 +68,24 @@ Open http://localhost:8080 to use the app.
 
 ## API Endpoints
 - GET /api/products - Get all products
+- POST /api/products - Create a new product
 - POST /api/bills - Create a bill
 - GET /api/bills - Get bill history by email
 - GET /api/bills/{bill_id} - Get a bill by ID
 - POST /api/seed - Seed sample products
+
+### Create Product Example
+```bash
+curl -X POST http://localhost:8000/api/products \
+  -H "Content-Type: application/json" \
+  -d '{
+    "product_id": "P004",
+    "name": "Product D",
+    "available_stocks": 75,
+    "price": 80,
+    "tax_percentage": 10
+  }'
+```
 
 ## Notes
 - Sample products are seeded automatically on first startup.
