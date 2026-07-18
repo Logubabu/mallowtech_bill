@@ -11,6 +11,33 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Billing System API")
 
+
+def _build_bill_payload(db: Session, db_bill, balance_denoms: dict):
+    bill_items = db.query(models.BillItem).filter(models.BillItem.bill_id == db_bill.id).all()
+    return {
+        "id": db_bill.id,
+        "customer_email": db_bill.customer_email,
+        "created_at": db_bill.created_at,
+        "items": [
+            {
+                "product_id": item.product_id,
+                "quantity": item.quantity,
+                "unit_price": item.unit_price,
+                "purchase_price": item.purchase_price,
+                "tax_for_item": item.tax_for_item,
+                "tax_payable": item.tax_payable,
+                "total_price": item.total_price,
+            }
+            for item in bill_items
+        ],
+        "total_price_without_tax": db_bill.total_price_without_tax,
+        "total_tax_payable": db_bill.total_tax_payable,
+        "net_price": db_bill.net_price,
+        "rounded_net_price": db_bill.rounded_net_price,
+        "balance_payable": db_bill.balance_payable,
+        "balance_denominations": balance_denoms,
+    }
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -48,10 +75,7 @@ def create_bill(bill_in: schemas.BillCreate, background_tasks: BackgroundTasks, 
     
     background_tasks.add_task(utils.send_invoice_email, db_bill.customer_email, db_bill.id, db_bill.net_price)
     
-    # We add balance_denominations to the response dynamically
-    response_data = db_bill.__dict__
-    response_data["balance_denominations"] = balance_denoms
-    return response_data
+    return _build_bill_payload(db, db_bill, balance_denoms)
 
 @app.get("/api/bills", response_model=List[schemas.BillHistoryList])
 def read_bills(email: str, db: Session = Depends(get_db)):
@@ -67,10 +91,7 @@ def read_bill(bill_id: int, db: Session = Depends(get_db)):
     # Recalculate or mock denoms since we don't store the exact returned denoms in DB
     # For a real system we might store it.
     balance_denoms = utils.calculate_balance_denominations(db_bill.balance_payable, {})
-    
-    response_data = db_bill.__dict__
-    response_data["balance_denominations"] = balance_denoms
-    return response_data
+    return _build_bill_payload(db, db_bill, balance_denoms)
 
 # Seed data endpoint for testing
 @app.post("/api/seed")
