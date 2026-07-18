@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bill Details</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="index.html">New Bill</a>
+            <a href="history.html">History</a>
+        </div>
+        <h2>Billing Page</h2>
+        
+        <div>
+            <strong>Customer Email: </strong> <span id="cEmail"></span>
+        </div>
+        
+        <br>
+        <table>
+            <thead>
+                <tr>
+                    <th>Product ID</th>
+                    <th>Unit Price</th>
+                    <th>Quantity</th>
+                    <th>Purchase Price</th>
+                    <th>Tax % for Item</th>
+                    <th>Tax Payable</th>
+                    <th>Total Price</th>
+                </tr>
+            </thead>
+            <tbody id="billItems">
+            </tbody>
+        </table>
+
+        <div class="summary">
+            <div>Total price without tax: <span id="totalWithoutTax"></span></div>
+            <div>Total tax payable: <span id="totalTax"></span></div>
+            <div>Net price of the purchased item: <span id="netPrice"></span></div>
+            <div>Rounded down value of the purchased items net price: <span id="roundedPrice"></span></div>
+            <div>Balance payable to the customer: <span id="balance"></span></div>
+        </div>
+
+        <div class="separator"></div>
+        
+        <div style="text-align: right;">
+            <strong>Balance Denomination:</strong>
+            <div id="balanceDenoms"></div>
+        </div>
+
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Billing Page</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="index.html">New Bill</a>
+            <a href="history.html">History</a>
+        </div>
+        <h2>Billing Page</h2>
+        
+        <form id="billForm">
+            <div class="form-group">
+                <label>Customer Email</label>
+                <input type="email" id="email" required>
+            </div>
+            
+            <div class="form-group" style="justify-content: center;">
+                <button type="button" class="btn" id="addBtn">Add New</button>
+            </div>
+
+            <div id="productSection">
+                <div class="form-group">
+                    <label>Bill section</label>
+                    <div class="product-item">
+                        <input type="text" placeholder="Product ID" class="prod-id" required>
+                        <input type="number" placeholder="Quantity" class="prod-qty" required min="1">
+                    </div>
+                </div>
+            </div>
+
+            <div class="separator"></div>
+
+            <div class="form-group">
+                <label>Denominations</label>
+                <div>
+                    <div>500 <input type="number" id="den-500" class="den-input"></div>
+                    <div>50 <input type="number" id="den-50" class="den-input"></div>
+                    <div>20 <input type="number" id="den-20" class="den-input"></div>
+                    <div>10 <input type="number" id="den-10" class="den-input"></div>
+                    <div>5 <input type="number" id="den-5" class="den-input"></div>
+                    <div>2 <input type="number" id="den-2" class="den-input"></div>
+                    <div>1 <input type="number" id="den-1" class="den-input"></div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Cash paid by customer</label>
+                <input type="number" id="cashPaid" required>
+            </div>
+
+            <div style="text-align: right;">
+                <button type="button" class="btn">Cancel</button>
+                <button type="submit" class="btn btn-primary">Generate Bill</button>
+            </div>
+        </form>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
