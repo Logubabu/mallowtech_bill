@@ -1,9 +1,16 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from pathlib import Path
 import os
 
-SQLALCHEMY_DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://myuser:mypassword@localhost:5432/billing_db")
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
 
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+
+SQLALCHEMY_DATABASE_URL = os.environ.get(
+    "DATABASE_URL",
+    "postgresql://myuser:mypassword@localhost:5432/billing_db",
+)
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,

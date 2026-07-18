@@ -4,10 +4,34 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from typing import List
 
-from . import models, schemas, crud, utils
-from .database import engine, get_db
+try:
+    from . import models, schemas, crud, utils
+    from .database import engine, get_db
+except ImportError:  # pragma: no cover - allows running main.py directly from backend/
+    import models
+    import schemas
+    import crud
+    import utils
+    from database import engine, get_db
 
 models.Base.metadata.create_all(bind=engine)
+
+
+def _seed_products_if_missing(db: Session) -> None:
+    products = [
+        models.Product(product_id="P001", name="Product A", available_stocks=100, price=100.0, tax_percentage=5.0),
+        models.Product(product_id="P002", name="Product B", available_stocks=50, price=50.0, tax_percentage=12.0),
+        models.Product(product_id="P003", name="Product C", available_stocks=200, price=10.0, tax_percentage=18.0),
+    ]
+    for product in products:
+        existing = db.query(models.Product).filter(models.Product.product_id == product.product_id).first()
+        if not existing:
+            db.add(product)
+    db.commit()
+
+
+with Session(engine) as session:
+    _seed_products_if_missing(session)
 
 app = FastAPI(title="Billing System API")
 
@@ -53,28 +77,31 @@ def read_products(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
 
 @app.post("/api/bills", response_model=schemas.BillResponse)
 def create_bill(bill_in: schemas.BillCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    # Calculate net price first to check balance
-    total_price = 0
+    if not bill_in.items:
+        raise HTTPException(status_code=400, detail="At least one bill item is required.")
+
+    total_price = 0.0
     for item in bill_in.items:
         product = crud.get_product_by_product_id(db, item.product_id)
-        if product:
-            purchase_price = product.price * item.quantity
-            tax_payable = (purchase_price * product.tax_percentage) / 100
-            total_price += purchase_price + tax_payable
-            
-    import math
-    rounded_net_price = math.floor(total_price)
-    
+        if not product:
+            raise HTTPException(status_code=404, detail=f"Product {item.product_id} not found")
+
+        purchase_price = product.price * item.quantity
+        tax_payable = (purchase_price * product.tax_percentage) / 100
+        total_price += purchase_price + tax_payable
+
+    rounded_net_price = int(total_price)
+
     if bill_in.cash_paid < rounded_net_price:
         raise HTTPException(status_code=400, detail="Cash paid is less than the net price.")
-        
+
     balance_payable = bill_in.cash_paid - rounded_net_price
     balance_denoms = utils.calculate_balance_denominations(balance_payable, bill_in.denominations)
-    
+
     db_bill = crud.create_bill(db, bill_in, balance_denoms)
-    
+
     background_tasks.add_task(utils.send_invoice_email, db_bill.customer_email, db_bill.id, db_bill.net_price)
-    
+
     return _build_bill_payload(db, db_bill, balance_denoms)
 
 @app.get("/api/bills", response_model=List[schemas.BillHistoryList])
@@ -96,17 +123,8 @@ def read_bill(bill_id: int, db: Session = Depends(get_db)):
 # Seed data endpoint for testing
 @app.post("/api/seed")
 def seed_data(db: Session = Depends(get_db)):
-    products = [
-        models.Product(product_id="P001", name="Product A", available_stocks=100, price=100.0, tax_percentage=5.0),
-        models.Product(product_id="P002", name="Product B", available_stocks=50, price=50.0, tax_percentage=12.0),
-        models.Product(product_id="P003", name="Product C", available_stocks=200, price=10.0, tax_percentage=18.0),
-    ]
-    for p in products:
-        existing = db.query(models.Product).filter(models.Product.product_id == p.product_id).first()
-        if not existing:
-            db.add(p)
-    db.commit()
+    _seed_products_if_missing(db)
     return {"message": "Data seeded"}
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
